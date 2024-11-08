@@ -1,9 +1,9 @@
 from googletrans import Translator
 import functions
 
-def translate():
+def translate(text=''):
     translator = Translator()
-    text = functions.voice
+    # text = functions.voice
     
     translated = translator.translate(text, src='en', dest='ru')
 

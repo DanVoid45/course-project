@@ -13,7 +13,7 @@ import translator
 import webbrowser
 
 opts = {
-    "alias": ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска"),
+    "alias": ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска", "кизару", "kizaru"),
     "tbr": (
         "скажи",
         "расскажи",
@@ -66,7 +66,7 @@ opts = {
         ),
         "conv": ("валюта", "конвертер", "доллар", "руб", "евро"),
         "internet": ("открой", "вк", "гугл", "сайт", "вконтакте", "ютуб"),
-        "translator": ("переводчик", "translate"),
+        "translator": ("переводчик", "переведи", "translate"),
         "deals": ("дела", "делишки", "как сам", "как дела"),
     },
 }
@@ -78,6 +78,46 @@ r = sr.Recognizer()
 m = sr.Microphone(device_index=1)
 voice = "str"
 
+
+
+def recogniseVoice(voice: str):
+    """Распознаем комманду из строки голоса
+        Например    voice = "<Имя> <Команда> <Параметры....>"\n
+        Или         voice = "<Распознанный голос> <Имя> <Команда> <Параметры....>"
+
+    Args:
+        voice (str): строка голоса
+    """
+    
+    splited_voice = voice.split(' ')
+    recognised_alias = [alias for alias in opts["alias"] if alias in splited_voice]
+    prepared_voice = splited_voice
+    
+    recoginesed_command = ''
+    
+    alias_ids = []
+
+    if recognised_alias:
+        for alias in recognised_alias:
+            alias_ids += [index for index, word in enumerate(splited_voice) if word == alias]
+
+        prepared_voice = prepared_voice[alias_ids[-1]:][1:] # Убираем все лишнее, берем последнее обращение без имени
+        
+    for command in opts['cmds']:
+        command_words = opts['cmds'][command]
+        
+        if prepared_voice:
+            if prepared_voice[0] in command_words: # Смотри есть ли глагол в списке комманд, если да, возвращаем
+                recoginesed_command = command
+                prepared_voice = ' '.join(prepared_voice[1:])
+                break
+        
+    if recoginesed_command:
+        return  [recoginesed_command, prepared_voice]
+    else:
+        return None
+    
+    
 
 def speak(what):
     print(what)
@@ -101,19 +141,27 @@ def callback(recognizer, audio):
         voice = recognizer.recognize_google(audio, language="ru-RU").lower()
 
         print("Распознано: " + voice)
+        
+        recognised = recogniseVoice(voice)
+        print(recognised)
+        
+        if recognised:
+            command, text = recognised
+            execute_cmd(command, text)
 
-        if voice.startswith(opts["alias"]):
-            cmd = voice
 
-            for x in opts["alias"]:
-                cmd = cmd.replace(x, "").strip()
+        # if voice.startswith(opts["alias"]):
+        #     cmd = voice
 
-            for x in opts["tbr"]:
-                cmd = cmd.replace(x, "").strip()
-            voice = cmd
-            # распознаем и выполняем команду
-            cmd = recognize_cmd(cmd)
-            execute_cmd(cmd["cmd"])
+        #     for x in opts["alias"]:
+        #         cmd = cmd.replace(x, "").strip()
+
+        #     for x in opts["tbr"]:
+        #         cmd = cmd.replace(x, "").strip()
+        #     voice = cmd
+        #     # распознаем и выполняем команду
+        #     cmd = recognize_cmd(cmd)
+        #     execute_cmd(cmd["cmd"])
 
     except sr.UnknownValueError:
         print("Голос не распознан!")
@@ -140,7 +188,7 @@ def recognize_cmd(cmd):
     return RC
 
 
-def execute_cmd(cmd):
+def execute_cmd(cmd, text=''):
     global startTime
     if cmd == "ctime":
         now = datetime.datetime.now()
@@ -155,7 +203,7 @@ def execute_cmd(cmd):
         envelope.convertation()
     elif cmd == "translator":
         print("пытаемся залесть в переводчик")
-        translator.translate()
+        translator.translate(text)
     # elif cmd == 'stupid1':
     #    anekdot.fun()
     elif cmd == "internet":
