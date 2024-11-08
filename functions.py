@@ -10,6 +10,7 @@ import calculator
 import time
 import envelope
 import translator
+import webbrowser
 
 opts = {
     "alias": ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска"),
@@ -144,6 +145,7 @@ def execute_cmd(cmd):
         now = datetime.datetime.now()
         speak("Сейчас {0}:{1}".format(str(now.hour), str(now.minute)))
     elif cmd == "shutdown":
+        open_tab = webbrowser.open_new_tab("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
         os.system("shutdown -s")
         speak("Выключаю...")
     elif cmd == "calc":
