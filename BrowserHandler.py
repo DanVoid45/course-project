@@ -11,6 +11,6 @@ def browser():
             else:
                 functions.speak("Выполняю")
                 open_tab = webbrowser.open_new_tab(k)
-
+                break
         if open_tab is not None:
             break

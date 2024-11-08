@@ -95,6 +95,7 @@ def speak(what):
 
 
 def callback(recognizer, audio):
+
     try:
         global voice
         voice = recognizer.recognize_google(audio, language="ru-RU").lower()
@@ -146,7 +147,7 @@ def execute_cmd(cmd):
         speak("Сейчас {0}:{1}".format(str(now.hour), str(now.minute)))
     elif cmd == "shutdown":
         open_tab = webbrowser.open_new_tab("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-        os.system("shutdown -s")
+        os.system("shutdown -s -t 90")
         speak("Выключаю...")
     elif cmd == "calc":
         calculator.calculator()
