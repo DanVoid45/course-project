@@ -11,6 +11,7 @@ import time
 import envelope
 import translator
 import webbrowser
+import weather
 
 opts = {
     "alias": ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска"),
