@@ -12,6 +12,7 @@ import envelope
 import translator
 import webbrowser
 import weather
+import mon2
 
 opts = {
     "alias": ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска"),
@@ -57,6 +58,11 @@ opts = {
             "+",
             "-",
             "/",
+        ),
+        "money": (
+            "подбрось",
+            "брось",
+            "кинь",
         ),
         "shutdown": (
             "выключи",
@@ -152,6 +158,8 @@ def execute_cmd(cmd):
         speak("Выключаю...")
     elif cmd == "calc":
         calculator.calculator()
+    elif cmd == "money":
+        mon2.toss_coin()
     elif cmd == "conv":
         envelope.convertation()
     elif cmd == "translator":
