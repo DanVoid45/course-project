@@ -40,13 +40,6 @@ opts = {
         ),
         "startStopwatch": ("запусти секундомер", "включи секундомер", "засеки время"),
         "stopStopwatch": ("останови секундомер", "выключи секундомер", "останови"),
-        "stupid1": (
-            "расскажи анекдот",
-            "рассмеши меня",
-            "ты знаешь анекдоты",
-            "шутка",
-            "прикол",
-        ),
         "calc": (
             "прибавить",
             "умножить",
@@ -74,7 +67,6 @@ opts = {
         "conv": ("валюта", "конвертер", "доллар", "руб", "евро"),
         "internet": ("открой", "вк", "гугл", "сайт", "вконтакте", "ютуб"),
         "translator": ("переводчик", "translate"),
-        "deals": ("дела", "делишки", "как сам", "как дела"),
         "weather": ("прогноз","погода","abc"),
     },
 }
@@ -166,8 +158,6 @@ def execute_cmd(cmd):
     elif cmd == "translator":
         print("пытаемся залесть в переводчик")
         translator.translate()
-    # elif cmd == 'stupid1':
-    #    anekdot.fun()
     elif cmd == "internet":
         BrowserHandler.browser()
     elif cmd == "startStopwatch":
@@ -182,8 +172,6 @@ def execute_cmd(cmd):
             startTime = 0
         else:
             speak("Секундомер не включен")
-    elif cmd == "deals":
-        speak("Пока отлично.")
     elif cmd == "weather":
         weather.weather()
     else:
