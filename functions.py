@@ -11,8 +11,8 @@ import time
 import envelope
 import translator
 import webbrowser
-import weather
 import mon2
+import weather
 
 opts = {
     "alias": ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска"),
@@ -75,6 +75,7 @@ opts = {
         "internet": ("открой", "вк", "гугл", "сайт", "вконтакте", "ютуб"),
         "translator": ("переводчик", "translate"),
         "deals": ("дела", "делишки", "как сам", "как дела"),
+        "weather": ("погода"),
     },
 }
 startTime = 0
@@ -183,5 +184,7 @@ def execute_cmd(cmd):
             speak("Секундомер не включен")
     elif cmd == "deals":
         speak("Пока отлично.")
+    elif cmd == "weather":
+        weather.weather()
     else:
         print("Команда не распознана!")
