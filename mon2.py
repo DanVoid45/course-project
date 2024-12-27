@@ -7,4 +7,3 @@ def toss_coin():
         functions.speak("Выпал орёл")
     else: functions.speak("Выпала решка")
     return
-#тест
