@@ -144,7 +144,7 @@ def execute_cmd(cmd):
     global startTime
     if cmd == "ctime":
         now = datetime.datetime.now()
-        speak("Сейчас {0}:{1}".format(str(now.hour), str(now.minute)))
+        return  ("Сейчас {0}:{1}".format(str(now.hour), str(now.minute)))
     elif cmd == "shutdown":
         open_tab = webbrowser.open_new_tab("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
         os.system("shutdown -s -t 90")
