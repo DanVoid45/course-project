@@ -1,6 +1,10 @@
+import os
+os.system('venv\Scripts\Activate.ps1')
+
 import functions
 import time
 import datetime
+
 
 now = datetime.datetime.now()
 
