@@ -42,5 +42,5 @@ def weather():
     command = functions.voice
     site = command.split()
     if "прогноз" in site:
-        functions.speak(forecast)
-        return
+        return(forecast)
+        

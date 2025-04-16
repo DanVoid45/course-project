@@ -142,17 +142,17 @@ def recognize_cmd(cmd):
 
 def execute_cmd(cmd):
     global startTime
-    if cmd == "ctime":
+    if cmd == "ctime":                                                                              #работает
         now = datetime.datetime.now()
         return  ("Сейчас {0}:{1}".format(str(now.hour), str(now.minute)))
-    elif cmd == "shutdown":
+    elif cmd == "shutdown":                                                                         #работает
         open_tab = webbrowser.open_new_tab("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
         os.system("shutdown -s -t 90")
-        speak("Выключаю...")
+        return("Выключаю...")
     elif cmd == "calc":
-        calculator.calculator()
-    elif cmd == "money":
-        mon2.toss_coin()
+        return calculator.calculator()
+    elif cmd == "money":                                                                            #работает
+        return mon2.toss_coin()
     elif cmd == "conv":
         envelope.convertation()
     elif cmd == "translator":
@@ -173,6 +173,6 @@ def execute_cmd(cmd):
         else:
             speak("Секундомер не включен")
     elif cmd == "weather":
-        weather.weather()
+        return weather.weather()
     else:
         print("Команда не распознана!")

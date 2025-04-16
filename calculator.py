@@ -20,9 +20,9 @@ def calculator():
             if num_2 != 0:
                 ans = num_1 / num_2
             else:
-                functions.speak("Делить на ноль невозможно")
+                return ("Делить на ноль невозможно")
         elif "степен" in oper:
             ans = num_1 ** num_2
-        functions.speak("{0} {1} {2} = {3}".format(list_of_nums[-3], list_of_nums[-2], list_of_nums[-1], ans))
+        return ("{0} {1} {2} = {3}".format(list_of_nums[-3], list_of_nums[-2], list_of_nums[-1], ans))
     except:
-        functions.speak("Скажите, например: Сколько будет 5+5?")
+        return ("Скажите, например: Сколько будет 5+5?")
