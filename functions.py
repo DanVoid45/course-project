@@ -93,15 +93,13 @@ def speak(what):
     speak.Volume = 100
     speak.Speak(what)
 
-
-def callback(recognizer, audio):
-
+def callback(recognizer, audio, messages_list=None):
+    global voice
     try:
-        global voice
+        # Распознаем голос с использованием Google Speech API
         voice = recognizer.recognize_google(audio, language="ru-RU").lower()
 
-        print("Распознано: " + voice)
-
+        # Пытаемся извлечь команду из распознанного текста
         if voice.startswith(opts["alias"]):
             cmd = voice
 
@@ -110,26 +108,35 @@ def callback(recognizer, audio):
 
             for x in opts["tbr"]:
                 cmd = cmd.replace(x, "").strip()
-            voice = cmd
-            # распознаем и выполняем команду
+
+            # Сохраняем распознанную команду в messages_list, если он передан
+            if messages_list is not None:
+                messages_list.insert(0, voice)  # Добавляем в начало списка
+
+            # Распознаем команду и выполняем ее
             cmd = recognize_cmd(cmd)
             execute_cmd(cmd["cmd"])
 
     except sr.UnknownValueError:
-        print("Голос не распознан!")
+        if messages_list is not None:
+            messages_list.insert(0, "Голос не распознан!")
+
     except sr.RequestError as e:
-        print("Неизвестная ошибка, проверьте интернет!")
+        if messages_list is not None:
+            messages_list.insert(0, "Неизвестная ошибка, проверьте интернет!")
 
 
-def listen():
+def listen(messages_list=None):
     with m as source:
         r.adjust_for_ambient_noise(source)
-    stop_listening = r.listen_in_background(m, callback)
+    top_listening = r.listen_in_background(m, lambda audio: 
+                                           callback(r, audio, messages_list))
     while True:
         time.sleep(0.1)
 
 
 def recognize_cmd(cmd):
+    #пропискать, если слишком маленькие проценты то выводить "не распознано"
     RC = {"cmd": "", "percent": 0}
     for c, v in opts["cmds"].items():
         for x in v:
