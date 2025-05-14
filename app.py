@@ -62,14 +62,14 @@ root.geometry('800x600')
 entry = CTkEntry(master = root, placeholder_text= "Введите запрос", width = 500)
 entry.place(relx = 0.5, rely = 0.8, anchor = 'center')
 
-image_plane = CTkImage(light_image=Image.open('plane.png'), size=(20, 20))
+image_plane = CTkImage(light_image=Image.open('pictures/plane.png'), size=(20, 20))
 btn_text = CTkButton(master = root, image = image_plane, width = 20, corner_radius = 32, text='', fg_color = '#CD0074', command = lambda: click_handler_text(entry.get()))
 btn_text.place(relx = 0.9, rely = 0.8, anchor = 'center')
 btn_text.bind('<Enter>', lambda e: btn_text.configure(fg_color='#CD0074'))
 root.bind('<Return>', lambda event: btn_text.invoke())
 
 #Кнопка для прослушивания
-image_microfone = CTkImage(light_image=Image.open('microfone.png'), size=(20, 20))
+image_microfone = CTkImage(light_image=Image.open('pictures/microfone.png'), size=(20, 20))
 btn_voice = CTkButton(master = root, image = image_microfone, width = 20, corner_radius = 32, text='', fg_color = '#CD0074', command = click_handler_voice)
 btn_voice.place(relx=0.1, rely=0.8, anchor='center')
 
