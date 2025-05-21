@@ -63,6 +63,9 @@ def calculator(user_command: str = '') -> str:
     # поиск "слов" при неявном вводе
     words: list = []
 
+    # нужен для добавления запятой в сложных функциях (так же хранит номера функций, которые дожны не быть учтены дважды)
+    commas: list = []
+
     # вызов функции с параметром (например, ввод пользователем команды через интерфейс)
     if user_command != '':
         try:
@@ -88,15 +91,44 @@ def calculator(user_command: str = '') -> str:
 
         # если найденное слово является числом
         try:
-            # добавление числа в command_parts
+
             number = str(int(words[i]))
+
+            # sin cos log 2 4
+            # log sqrt 2 4
+            # log sqrt ( 2 + 1 ) sin 4
+            if commas.count(',') > 0:
+                # log( or pow( already here
+                ignored = []
+                for i in commas:
+                    if i != ',':
+                        ignored.append(int(commas[i]))
+                
+                for i in range(len(command_parts)-1, -1, -1):
+                    if command_parts[i] in ('log(', 'pow(') and not (i in ignored):
+                        if i + 1 == len(command_parts):
+                            break
+                        if len(command_parts) > i + 2:
+                            if command_parts[i+1] == '(' and ')' in command_parts[i:]:
+                                command_parts.insert(len(command_parts) - command_parts[::-1].index(')'), commas.pop())
+                                commas.insert(0, str(i))
+                                break
+                        if command_parts[i+1] != '(':
+                            try:
+                                int(command_parts[-1])
+                                command_parts.append(commas.pop())
+                                commas.insert(str(i))
+                            except: ()
+                        break
+
+            # добавление числа в command_parts
             command_parts.append(number)
 
             # сложить 2 и 3 -> buffer == + -> command_parts == [..., 2, +, 3, ...]
             if buffer != '':
                 command_parts.append(buffer)
                 buffer = ''
-            
+
         # поиск команды
         except:
             # ()
@@ -151,9 +183,7 @@ def calculator(user_command: str = '') -> str:
                         command_parts.append(',')
                         continue
                 
-                # проблема в этом месте связана с тем, что если мы введём как первый аргумент сложное выражение, то всё полетит
-                # результат: логарифм корень 2 3 -> log(sqrt(2,3))
-                buffer = ','
+                commas.append(',')
 
             # в квавдрате, в кубе
             elif words[i] == 'в':
@@ -166,16 +196,20 @@ def calculator(user_command: str = '') -> str:
     while command_parts.count('(') > command_parts.count(')'):
         command_parts.append(')')
 
+
     if __name__ == '__main__':
         print('command_parts:', command_parts)
-    
+
+
     # команда, которая должна быть выполнена
     command = ''
 
     # сцепление всего, что находится между пользовательскими скобками воедино
     while '(' in command_parts and ')' in command_parts:
+        print(command_parts)
+        
         j = command_parts.index(')')
-        i = len(command_parts) - command_parts[j::-1].index('(') - 1
+        i = j - command_parts[j::-1].index('(')
 
         piece = ''
 
@@ -195,6 +229,17 @@ def calculator(user_command: str = '') -> str:
 
         command_parts = command_parts[:i] + [piece] + command_parts[j+1:]
 
+
+    # для недопуска повторов при rfind
+    #          pow log
+    ignored = [[], []]
+    def d_f_find(s: str, part: str, k: int) -> int:
+        if s.rfind(part) in ignored[k]:
+            return d_f_find(s[:s.rfind(part)] + s[s.rfind(part) + len(part):], part, k)
+        else:
+            return s.rfind(part)
+        
+    
     i = 0
 
     # sin( cos( ( sin( 2 + 3 + 2) + 1 -> sin(cos((sin(2)+3)))+1
@@ -203,8 +248,23 @@ def calculator(user_command: str = '') -> str:
     # ( + 2 3) * 3
     # (2 / (1 + 1) + 1)
     # ['sin(', 'cos(', '(', ')']
-    
+
     while i < len(command_parts):
+        # ,
+        if command_parts[i] == ',':
+            index = [-1, -1]
+            if command.find('pow(') != -1:
+                index[0] = d_f_find(command, 'pow(', 0)
+            if command.find('log(') != -1:
+                index[1] = d_f_find(command, 'log(', 1)
+            if index[0] > index[1]:
+                ignored[0].append(index[0])
+            if index[0] < index[1]:
+                ignored[1].append(index[1])
+            print(index, ignored)
+            if max(index) != -1:
+                while command[max(index)+4:].count('(') != command[max(index)+1:].count(')'):
+                    command += ')'
 
         # закрытие скобок от функций sin(cos(...*))* <-
         if command_parts[i] in function_recognation:
