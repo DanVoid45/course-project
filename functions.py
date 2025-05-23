@@ -68,6 +68,7 @@ opts = {
         "internet": ("открой", "вк", "гугл", "сайт", "вконтакте", "ютуб"),
         "translator": ("переводчик", "translate"),
         "weather": ("прогноз","погода","abc"),
+        "nothing": ("Не распознано"),
     },
 }
 startTime = 0
@@ -93,50 +94,46 @@ def speak(what):
     speak.Volume = 100
     speak.Speak(what)
 
-def callback(recognizer, audio, messages_list=None):
-    global voice
+def callback(recognizer, audio, callback_ui=None):
     try:
-        # Распознаем голос с использованием Google Speech API
         voice = recognizer.recognize_google(audio, language="ru-RU").lower()
 
-        # Пытаемся извлечь команду из распознанного текста
-        if voice.startswith(opts["alias"]):
+        if any(alias in voice for alias in opts["alias"]):
             cmd = voice
-
             for x in opts["alias"]:
-                cmd = cmd.replace(x, "").strip()
-
+                cmd = cmd.replace(x, "")
             for x in opts["tbr"]:
-                cmd = cmd.replace(x, "").strip()
+                cmd = cmd.replace(x, "")
+            cmd = cmd.strip()
 
-            # Сохраняем распознанную команду в messages_list, если он передан
-            if messages_list is not None:
-                messages_list.insert(0, voice)  # Добавляем в начало списка
-
-            # Распознаем команду и выполняем ее
-            cmd = recognize_cmd(cmd)
-            execute_cmd(cmd["cmd"])
+            if callback_ui:
+                callback_ui(voice, is_voice=True)
 
     except sr.UnknownValueError:
-        if messages_list is not None:
-            messages_list.insert(0, "Голос не распознан!")
+        if callback_ui:
+            callback_ui("Голос не распознан!", is_voice=True)
 
-    except sr.RequestError as e:
-        if messages_list is not None:
-            messages_list.insert(0, "Неизвестная ошибка, проверьте интернет!")
+    except sr.RequestError:
+        if callback_ui:
+            callback_ui("Ошибка соединения!", is_voice=True)
 
 
-def listen(messages_list=None):
-    with m as source:
+
+def listen(callback_ui=None):
+    mic = sr.Microphone(device_index=1)
+    with mic as source:
         r.adjust_for_ambient_noise(source)
-    top_listening = r.listen_in_background(m, lambda audio: 
-                                           callback(r, audio, messages_list))
-    while True:
-        time.sleep(0.1)
+
+    def wrapper(recognizer, audio):
+        callback(recognizer, audio, callback_ui)
+
+    r.listen_in_background(mic, wrapper)
+
+
+
 
 
 def recognize_cmd(cmd):
-    #пропискать, если слишком маленькие проценты то выводить "не распознано"
     RC = {"cmd": "", "percent": 0}
     for c, v in opts["cmds"].items():
         for x in v:
@@ -144,6 +141,8 @@ def recognize_cmd(cmd):
             if vrt > RC["percent"]:
                 RC["cmd"] = c
                 RC["percent"] = vrt
+    if RC["percent"] < 20:
+        RC ['cmd'] = "nothing"
     return RC
 
 
@@ -181,5 +180,7 @@ def execute_cmd(cmd):
             speak("Секундомер не включен")
     elif cmd == "weather":
         return weather.weather()
+    elif cmd == 'nothing':
+        return "Не распознано"
     else:
         print("Команда не распознана!")
