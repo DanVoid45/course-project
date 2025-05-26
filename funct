@@ -1,0 +1,86 @@
+# Инициализация переменной времени начала
+startTime = 0
+
+# Инициализация текстового движка для синтеза речи
+speak_engine = pyttsx3.init()
+
+# Получение доступных голосов для синтеза речи
+voices = speak_engine.getProperty("voices")
+
+# Установка голоса на второй доступный голос
+speak_engine.setProperty("voice", voices[1].id)
+
+# Создание экземпляра распознавателя речи
+r = sr.Recognizer()
+
+# Установка микрофона для записи (указан индекс устройства)
+m = sr.Microphone(device_index=1)
+
+# Переменная для хранения распознанного голоса
+voice = "str"
+
+# Функция для синтеза речи
+def speak(what):
+    print(what)  # Вывод текста, который будет произнесен
+    speak = win32com.client.Dispatch("Sapi.SpVoice")  # Инициализация SAPI для синтеза речи
+    voices = speak.GetVoices()  # Получение доступных голосов
+    voices_names = [voice.GetDescription() for voice in voices]  # Получение названий голосов
+
+    # Название голоса, который будет использоваться
+    namevoice = 'VE_Russian_Milena_22kHz'
+    # Получение индекса голоса по его названию (или 0, если голос не найден)
+    namevoiceID = voices_names.index(namevoice) if namevoice in voices_names else 0
+    speak.Voice = voices[namevoiceID]  # Установка выбранного голоса
+
+    # Настройка параметров синтеза речи
+    speak.Rate = 2  # Скорость речи
+    speak.Volume = 100  # Громкость речи
+    speak.Speak(what)  # Произнесение текста
+
+# Функция обратного вызова для обработки распознанной речи
+def callback(recognizer, audio):
+    try:
+        global voice  # Объявление глобальной переменной voice
+        # Распознавание речи с использованием Google API
+        voice = recognizer.recognize_google(audio, language="ru-RU").lower()
+        print("Распознано: " + voice)  # Вывод распознанного текста
+
+        # Проверка, начинается ли распознанный текст с алиаса
+        if voice.startswith(opts["alias"]):
+            cmd = voice
+
+            # Удаление алиасов из команды
+            for x in opts["alias"]:
+                cmd = cmd.replace(x, "").strip()
+
+            # Удаление других ненужных фраз из команды
+            for x in opts["tbr"]:
+                cmd = cmd.replace(x, "").strip()
+            voice = cmd  # Обновление переменной voice
+            # Распознаем и выполняем команду
+            cmd = recognize_cmd(cmd)  # Распознавание команды
+            execute_cmd(cmd["cmd"])  # Выполнение команды
+
+    except sr.UnknownValueError:
+        print("Голос не распознан!")  # Обработка ошибки, если речь не распознана
+    except sr.RequestError as e:
+        print("Неизвестная ошибка, проверьте интернет!")  # Обработка ошибок запроса
+
+# Функция для прослушивания звука
+def listen():
+    with m as source:
+        r.adjust_for_ambient_noise(source)  # Настройка на уровень окружающего шума
+    stop_listening = r.listen_in_background(m, callback)  # Запуск прослушивания в фоновом режиме
+    while True:
+        time.sleep(0.1)  # Бесконечный цикл для поддержания работы
+
+# Функция для распознавания команды
+def recognize_cmd(cmd):
+    RC = {"cmd": "", "percent": 0}  # Словарь для хранения распознанной команды и её точности
+    for c, v in opts["cmds"].items():  # Перебор всех команд
+        for x in v:
+            vrt = fuzz.ratio(cmd, x)  # Вычисление схожести между командой и вариантами
+            if vrt > RC["percent"]:  # Если схожесть выше текущего максимума
+                RC["cmd"] = c  # Обновление команды
+                RC["percent"] = vrt  # Обновление процента схожести
+    return RC  # Возврат распознанной команды и её точности

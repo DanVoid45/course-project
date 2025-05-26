@@ -1,13 +1,15 @@
-import requests
+from googletrans import Translator
 import functions
 
 def translate():
-    url = 'https://www.deepl.com/ru/translator'
-    key = 'trnsl.1.1.20190227T075339Z.1b02a9ab6d4a47cc.f37d50831b51374ee600fd6aa0259419fd7ecd97'
-    text = functions.voice.split()[1:]
-    lang = 'en-ru'
-    r = requests.post(url, data={'key': key, 'text': text, 'lang': lang}).json()
+    translator = Translator()
+    text = functions.voice
+    
+    translated = translator.translate(text, src='en', dest='ru')
+
+    result = translated.text
+    
     try:
-        functions.speak(r["text"])
+        functions.speak(result)
     except:
         functions.speak("Обратитесь к переводчику, начиная со слова 'Переводчик'")

@@ -10,9 +10,12 @@ import calculator
 import time
 import envelope
 import translator
+import webbrowser
+import mon2
+import weather
 
 opts = {
-    "alias": ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска"),
+    "alias": ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска","алиса"),
     "tbr": (
         "скажи",
         "расскажи",
@@ -37,13 +40,6 @@ opts = {
         ),
         "startStopwatch": ("запусти секундомер", "включи секундомер", "засеки время"),
         "stopStopwatch": ("останови секундомер", "выключи секундомер", "останови"),
-        "stupid1": (
-            "расскажи анекдот",
-            "рассмеши меня",
-            "ты знаешь анекдоты",
-            "шутка",
-            "прикол",
-        ),
         "calc": (
             "прибавить",
             "умножить",
@@ -56,6 +52,11 @@ opts = {
             "-",
             "/",
         ),
+        "money": (
+            "подбрось",
+            "брось",
+            "кинь",
+        ),
         "shutdown": (
             "выключи",
             "выключить",
@@ -66,7 +67,7 @@ opts = {
         "conv": ("валюта", "конвертер", "доллар", "руб", "евро"),
         "internet": ("открой", "вк", "гугл", "сайт", "вконтакте", "ютуб"),
         "translator": ("переводчик", "translate"),
-        "deals": ("дела", "делишки", "как сам", "как дела"),
+        "weather": ("прогноз","погода","abc"),
     },
 }
 startTime = 0
@@ -94,6 +95,7 @@ def speak(what):
 
 
 def callback(recognizer, audio):
+
     try:
         global voice
         voice = recognizer.recognize_google(audio, language="ru-RU").lower()
@@ -144,17 +146,18 @@ def execute_cmd(cmd):
         now = datetime.datetime.now()
         speak("Сейчас {0}:{1}".format(str(now.hour), str(now.minute)))
     elif cmd == "shutdown":
-        os.system("shutdown -s")
+        open_tab = webbrowser.open_new_tab("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        os.system("shutdown -s -t 90")
         speak("Выключаю...")
     elif cmd == "calc":
         calculator.calculator()
+    elif cmd == "money":
+        mon2.toss_coin()
     elif cmd == "conv":
         envelope.convertation()
     elif cmd == "translator":
         print("пытаемся залесть в переводчик")
         translator.translate()
-    # elif cmd == 'stupid1':
-    #    anekdot.fun()
     elif cmd == "internet":
         BrowserHandler.browser()
     elif cmd == "startStopwatch":
@@ -169,7 +172,7 @@ def execute_cmd(cmd):
             startTime = 0
         else:
             speak("Секундомер не включен")
-    elif cmd == "deals":
-        speak("Пока отлично.")
+    elif cmd == "weather":
+        weather.weather()
     else:
         print("Команда не распознана!")
