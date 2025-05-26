@@ -4,18 +4,18 @@ import os
 import win32com.client
 from fuzzywuzzy import fuzz
 import datetime
-import win32com.client as wincl
+import time
+import asyncio
+from vtubestudio import vts
 import BrowserHandler
 import calculator
-import time
+import mon2
 import envelope
 import translator
-import webbrowser
-import mon2
 import weather
 
 opts = {
-    "alias": ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска","алиса"),
+    "alias": ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска", "алиса"),
     "tbr": (
         "скажи",
         "расскажи",
@@ -23,7 +23,6 @@ opts = {
         "сколько",
         "произнеси",
         "как",
-        "сколько",
         "поставь",
         "переведи",
         "засеки",
@@ -52,11 +51,7 @@ opts = {
             "-",
             "/",
         ),
-        "money": (
-            "подбрось",
-            "брось",
-            "кинь",
-        ),
+        "money": ("подбрось", "брось", "кинь"),
         "shutdown": (
             "выключи",
             "выключить",
@@ -67,112 +62,143 @@ opts = {
         "conv": ("валюта", "конвертер", "доллар", "руб", "евро"),
         "internet": ("открой", "вк", "гугл", "сайт", "вконтакте", "ютуб"),
         "translator": ("переводчик", "translate"),
-        "weather": ("прогноз","погода","abc"),
+        "weather": ("прогноз", "погода", "abc"),
+        "nothing": ("Не распознано"),
     },
 }
+
 startTime = 0
-speak_engine = pyttsx3.init()
-voices = speak_engine.getProperty("voices")
-speak_engine.setProperty("voice", voices[1].id)
-r = sr.Recognizer()
-m = sr.Microphone(device_index=1)
-voice = "str"
 
+# Асинхронное озвучивание с анимацией
+async def async_speak(what: str):
+    """Асинхронное произнесение текста с синхронизацией анимации"""
+    try:
+        await vts.trigger_hotkey("LipSync_Start")
+        
+        # Озвучка через SAPI
+        engine = win32com.client.Dispatch("Sapi.SpVoice")
+        voices = engine.GetVoices()
+        target_voice = next(
+            v for v in voices 
+            if "VE_Russian_Milena_22kHz" in v.GetDescription()
+        )
+        engine.Voice = target_voice
+        engine.Rate = 2
+        engine.Volume = 100
+        engine.Speak(what)
+        
+        await vts.trigger_hotkey("LipSync_Stop")
+        
+    except Exception as e:
+        print(f"Ошибка анимации: {e}")
+        try: 
+            await vts.trigger_hotkey("LipSync_Stop")
+        except: 
+            pass
 
-def speak(what):
+# Синхронная обертка для обратной совместимости
+def speak(what: str):
+    """Синхронный интерфейс для озвучки"""
     print(what)
-    speak = win32com.client.Dispatch("Sapi.SpVoice")
-    voices = speak.GetVoices()
-    voices_names = [voice.GetDescription() for voice in voices]
-
-    namevoice = 'VE_Russian_Milena_22kHz'
-    namevoiceID = voices_names.index(namevoice) if namevoice in voices_names else 0
-    speak.Voice = voices[namevoiceID]
-
-    speak.Rate = 2
-    speak.Volume = 100
-    speak.Speak(what)
-
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.create_task(async_speak(what))
+        else:
+            loop.run_until_complete(async_speak(what))
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(async_speak(what))
+        loop.close()
 
 def callback(recognizer, audio):
-
+    """Обработка аудиовхода"""
+    global voice
     try:
-        global voice
         voice = recognizer.recognize_google(audio, language="ru-RU").lower()
+        print(f"Распознано: {voice}")
 
-        print("Распознано: " + voice)
-
-        if voice.startswith(opts["alias"]):
+        if any(alias in voice for alias in opts["alias"]):
             cmd = voice
-
-            for x in opts["alias"]:
+            for x in opts["alias"] + opts["tbr"]:
                 cmd = cmd.replace(x, "").strip()
-
-            for x in opts["tbr"]:
-                cmd = cmd.replace(x, "").strip()
-            voice = cmd
-            # распознаем и выполняем команду
-            cmd = recognize_cmd(cmd)
-            execute_cmd(cmd["cmd"])
+            
+            recognized = recognize_cmd(cmd)
+            execute_cmd(recognized["cmd"])
 
     except sr.UnknownValueError:
         print("Голос не распознан!")
-    except sr.RequestError as e:
-        print("Неизвестная ошибка, проверьте интернет!")
-
+    except sr.RequestError:
+        print("Ошибка соединения с сервисом распознавания!")
 
 def listen():
-    with m as source:
+    """Запуск фонового прослушивания"""
+    r = sr.Recognizer()
+    with sr.Microphone(device_index=1) as source:
         r.adjust_for_ambient_noise(source)
-    stop_listening = r.listen_in_background(m, callback)
-    while True:
-        time.sleep(0.1)
+    
+    stop_listening = r.listen_in_background(
+        sr.Microphone(device_index=1), 
+        callback
+    )
+    return stop_listening
 
+def recognize_cmd(cmd: str) -> dict:
+    """Распознавание команды с использованием fuzzy-логики"""
+    best_match = {"cmd": "nothing", "percent": 0}
+    for command, patterns in opts["cmds"].items():
+        for pattern in patterns:
+            similarity = fuzz.ratio(cmd, pattern)
+            if similarity > best_match["percent"]:
+                best_match = {"cmd": command, "percent": similarity}
+    return best_match if best_match["percent"] >= 40 else {"cmd": "nothing", "percent": 0}
 
-def recognize_cmd(cmd):
-    RC = {"cmd": "", "percent": 0}
-    for c, v in opts["cmds"].items():
-        for x in v:
-            vrt = fuzz.ratio(cmd, x)
-            if vrt > RC["percent"]:
-                RC["cmd"] = c
-                RC["percent"] = vrt
-    return RC
-
-
-def execute_cmd(cmd):
+def execute_cmd(command: str):
+    """Выполнение распознанной команды"""
     global startTime
-    if cmd == "ctime":
-        now = datetime.datetime.now()
-        speak("Сейчас {0}:{1}".format(str(now.hour), str(now.minute)))
-    elif cmd == "shutdown":
-        open_tab = webbrowser.open_new_tab("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-        os.system("shutdown -s -t 90")
-        speak("Выключаю...")
-    elif cmd == "calc":
-        calculator.calculator()
-    elif cmd == "money":
-        mon2.toss_coin()
-    elif cmd == "conv":
-        envelope.convertation()
-    elif cmd == "translator":
-        print("пытаемся залесть в переводчик")
-        translator.translate()
-    elif cmd == "internet":
-        BrowserHandler.browser()
-    elif cmd == "startStopwatch":
-        speak("Секундомер запущен")
-        startTime = time.time()
-    elif cmd == "stopStopwatch":
-        if startTime != 0:
-            Time = time.time() - startTime
-            speak(
-                f"Прошло {round(Time // 3600)} часов {round(Time // 60)} минут {round(Time % 60, 2)} секунд"
-            )
-            startTime = 0
+    try:
+        if command == "ctime":
+            now = datetime.datetime.now()
+            speak(f"Сейчас {now.hour}:{now.minute:02}")
+            
+        elif command == "shutdown":
+            os.system("shutdown /s /t 30")
+            speak("Компьютер выключится через 30 секунд")
+            
+        elif command == "calc":
+            calculator.calculator()
+            
+        elif command == "money":
+            mon2.toss_coin()
+            
+        elif command == "conv":
+            envelope.convertation()
+            
+        elif command == "translator":
+            translator.translate()
+            
+        elif command == "internet":
+            BrowserHandler.browser()
+            
+        elif command == "startStopwatch":
+            startTime = time.time()
+            speak("Секундомер запущен")
+            
+        elif command == "stopStopwatch":
+            if startTime:
+                elapsed = time.time() - startTime
+                speak(f"Прошло: {elapsed:.2f} секунд")
+                startTime = 0
+            else:
+                speak("Секундомер не активен")
+                
+        elif command == "weather":
+            weather.weather()
+            
         else:
-            speak("Секундомер не включен")
-    elif cmd == "weather":
-        weather.weather()
-    else:
-        print("Команда не распознана!")
+            speak("Команда не распознана")
+            
+    except Exception as e:
+        print(f"Ошибка выполнения: {e}")
+        speak("Произошла ошибка при выполнении команды")
