@@ -6,13 +6,14 @@ from fuzzywuzzy import fuzz
 import datetime
 import win32com.client as wincl
 import BrowserHandler
-import calculator
+from calculator import calculator
 import time
 import envelope
 import translator
 import webbrowser
 import mon2
 import weather
+import re
 
 opts = {
     "alias": ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска","алиса"),
@@ -47,11 +48,25 @@ opts = {
             "степень",
             "вычесть",
             "поделить",
+            "сложить",
+            "логарифм",
+            "sin",
+            "cos",
+            "tg",
+            "ctg",
+            "pow",
+            "log",
             "х",
             "+",
             "-",
             "/",
         ),
+        "play_music": 
+        ("включи музыку",
+        "воспроизведи",
+        "поставь песню", 
+        "включи трек"),
+
         "money": (
             "подбрось",
             "брось",
@@ -96,18 +111,35 @@ def speak(what):
 
 def callback(recognizer, audio, callback_ui=None):
     try:
+        global voice
         voice = recognizer.recognize_google(audio, language="ru-RU").lower()
 
-        if any(alias in voice for alias in opts["alias"]):
-            cmd = voice
-            for x in opts["alias"]:
-                cmd = cmd.replace(x, "")
-            for x in opts["tbr"]:
-                cmd = cmd.replace(x, "")
-            cmd = cmd.strip()
+        print("Распознано: " + voice)
 
+        if voice.startswith(opts["alias"]):
+            cmd = voice
+
+            for x in opts["alias"]:
+                cmd = cmd.replace(x, "").strip()
+
+            for x in opts["tbr"]:
+                cmd = cmd.replace(x, "").strip()
+            voice = cmd
+            # распознаем и выполняем команду
+            cmd = recognize_cmd(cmd)
+            execute_cmd(cmd["cmd"])
+
+            # Очистили — теперь можно показывать пользователю и обрабатывать
             if callback_ui:
-                callback_ui(voice, is_voice=True)
+                callback_ui(cmd, is_voice=True)
+
+            recognized = recognize_cmd(cmd)
+            response = execute_cmd(cmd, recognized["cmd"])
+
+            if response:
+                speak(response)
+                if callback_ui:
+                    callback_ui(response, is_voice=True)
 
     except sr.UnknownValueError:
         if callback_ui:
@@ -119,66 +151,71 @@ def callback(recognizer, audio, callback_ui=None):
 
 
 
+
+
+stopper = None
+
 def listen(callback_ui=None):
+    global stopper
     mic = sr.Microphone(device_index=1)
     with mic as source:
         r.adjust_for_ambient_noise(source)
 
     def wrapper(recognizer, audio):
-        callback(recognizer, audio, callback_ui)
+        try:
+            print(">>> Вызван wrapper")
+            callback(recognizer, audio, callback_ui)
+        except Exception as e:
+            print("[Ошибка в wrapper]:", e)
 
-    r.listen_in_background(mic, wrapper)
 
-
-
+    print(">>> Стартуем прослушивание в фоне")
+    stopper = r.listen_in_background(mic, wrapper)
 
 
 def recognize_cmd(cmd):
-    RC = {"cmd": "", "percent": 0}
-    for c, v in opts["cmds"].items():
-        for x in v:
-            vrt = fuzz.ratio(cmd, x)
-            if vrt > RC["percent"]:
-                RC["cmd"] = c
-                RC["percent"] = vrt
-    if RC["percent"] < 20:
-        RC ['cmd'] = "nothing"
-    return RC
+    for key, values in opts["cmds"].items():
+        for phrase in values:
+            if phrase in cmd:
+                return {"cmd": key, "percent": 100}
+    return {"cmd": "nothing", "percent": 0}
 
 
-def execute_cmd(cmd):
+
+def execute_cmd(request, cmd):
     global startTime
-    if cmd == "ctime":                                                                              #работает
+    if cmd == "ctime":                                                                             
         now = datetime.datetime.now()
         return  ("Сейчас {0}:{1}".format(str(now.hour), str(now.minute)))
-    elif cmd == "shutdown":                                                                         #работает
+    elif cmd == "shutdown":                                                                        
         open_tab = webbrowser.open_new_tab("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
         os.system("shutdown -s -t 90")
         return("Выключаю...")
-    elif cmd == "calc":
-        return calculator.calculator()
-    elif cmd == "money":                                                                            #работает
+    elif cmd == "calc":                                                                            
+        return calculator(request)
+    elif cmd == "play_music":
+        return BrowserHandler.browser(request)
+    elif cmd == "money":                                                                           
         return mon2.toss_coin()
     elif cmd == "conv":
-        envelope.convertation()
-    elif cmd == "translator":
-        print("пытаемся залесть в переводчик")
-        translator.translate()
-    elif cmd == "internet":
-        BrowserHandler.browser()
-    elif cmd == "startStopwatch":
-        speak("Секундомер запущен")
+        return envelope.convertation(request)
+    elif cmd == "translator":                                                                 
+        return translator.translate(request)
+    elif cmd == "internet":                                                                        #нужно все проверить
+        return (BrowserHandler.browser(request))
+    elif cmd == "startStopwatch":                                                                   
         startTime = time.time()
+        return("Секундомер запущен")
     elif cmd == "stopStopwatch":
         if startTime != 0:
             Time = time.time() - startTime
-            speak(
-                f"Прошло {round(Time // 3600)} часов {round(Time // 60)} минут {round(Time % 60, 2)} секунд"
-            )
             startTime = 0
+            return(
+                f"{round(Time, 2)} секунд"
+            )
         else:
-            speak("Секундомер не включен")
-    elif cmd == "weather":
+            return("Секундомер не включен")
+    elif cmd == "weather":                                                                          #нужно проверить
         return weather.weather()
     elif cmd == 'nothing':
         return "Не распознано"

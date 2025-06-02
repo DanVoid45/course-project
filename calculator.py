@@ -39,23 +39,30 @@ function_recognation = {
 
 specific_function_recognition = {
     'корень': 'sqrt',
+    'sqrt': 'sqrt',
     'квадрат': 'sqr',
+    'sqr': 'sqr',
     'синус': 'sin',
+    'sin': 'sin',
+    'cos': 'cos',
     'косинус': 'cos',
     'тангенс': 'tg',
-    'котангенс': 'ctg'
+    'котангенс': 'ctg',
 }
 
 dificult_function_recognition = {
     'степень': 'pow',
-    'логарифм': 'log'
+    'логарифм': 'log',
+    'log': 'log',
+    'pow': 'pow'
 }
 
 # [sin(, [...], )]
 # [sin(, [cos(, [1, +, 2], )], )]
 # sin(, ..., ) 
 def calculator(user_command: str = '') -> str:
-
+    print(user_command)
+    print("я вызвался!!")
     # дебаг режим
     if __name__ == '__main__':
         print('\ndebug', '-'*10, sep='\n')
@@ -70,8 +77,8 @@ def calculator(user_command: str = '') -> str:
     if user_command != '':
         try:
             # попытка вычислить значение выражения в лоб
-            if eval(user_command) != '':
-                return eval(user_command.replace(' '))
+            if eval(user_command.replace(' ', '')) != '':
+                return eval(user_command.replace(' ', ''))
         # разделение команды на список слов
         except:
             words = user_command.split()
@@ -83,6 +90,7 @@ def calculator(user_command: str = '') -> str:
     # части команды
     command_parts: list = []
     
+
     # буфер
     buffer: str = ''
 
@@ -123,6 +131,7 @@ def calculator(user_command: str = '') -> str:
 
             # добавление числа в command_parts
             command_parts.append(number)
+            print(command_parts)
 
             # сложить 2 и 3 -> buffer == + -> command_parts == [..., 2, +, 3, ...]
             if buffer != '':
@@ -160,6 +169,8 @@ def calculator(user_command: str = '') -> str:
             # sqrt(a) sqr(a) sin(a) cos(a) tg(a) ctg(a)
             elif words[i] in specific_function_recognition:
                 command_parts.append(specific_function_recognition[words[i]] + '(')
+                print ("aboba")
+                print(command_parts)
             
             # pow(a,b), log(a, b)
             elif words[i] in dificult_function_recognition:
@@ -293,18 +304,21 @@ def calculator(user_command: str = '') -> str:
         result = round(float(eval(command)), 10)
         if result == int(result):         
             result = int(result)
-        return result
+        return str(result)
     # ------ ТЕБЕ НА РАССМОТРЕНИЕ -----
     except:
         if user_command == '':
-            print('Скажите, например: Сколько будет 5+5?')
+            return('Скажите, например: Сколько будет 5+5?')
         else:
-            print('Неверная команда')
-        return ''
+            return('Неверная команда' + ' '.join(commands))
+
+
+def temp(string: str):
+    return string
 
 if __name__ == '__main__':
     print('. - для выхода')
     inp = input()
     while inp != '.':
-        print(calculator(inp), end='\n\n')
+        temp(calculator(inp))
         inp = input()

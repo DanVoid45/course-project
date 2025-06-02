@@ -1,15 +1,27 @@
 from googletrans import Translator
-import functions
 
-def translate():
+# Опции, чтобы убрать лишние слова из запроса
+ALIASES = ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска", "алиса")
+TRIGGERS = (
+    "скажи", "расскажи", "покажи", "сколько", "произнеси", "как", "поставь",
+    "переведи", "засеки", "запусти", "переводчик", "translate", "какое сейчас время"
+)
+
+def clean_request(text):
+    for x in ALIASES:
+        text = text.replace(x, "")
+    for x in TRIGGERS:
+        text = text.replace(x, "")
+    return text.strip()
+
+def translate(request):
     translator = Translator()
-    text = functions.voice
     
-    translated = translator.translate(text, src='en', dest='ru')
-
-    result = translated.text
+    # Очищаем текст запроса
+    clean_text = clean_request(request)
     
     try:
-        functions.speak(result)
-    except:
-        functions.speak("Обратитесь к переводчику, начиная со слова 'Переводчик'")
+        translated = translator.translate(clean_text, src='en', dest='ru')
+        return translated.text
+    except Exception as e:
+        return f"Ошибка перевода: {e}"

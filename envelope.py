@@ -1,13 +1,13 @@
 from currency_converter import CurrencyConverter
 import functions
-def convertation():
+def convertation(request):
     class CurrencyError(Exception):
         pass
     c = CurrencyConverter()
     money = None
     from_currency = None
     to_currency = None
-    list_of_conv = functions.voice.split()
+    list_of_conv = request.split()
     if len(list_of_conv) > 4:
         list_of_conv = list_of_conv[1:]
     else:
@@ -16,14 +16,13 @@ def convertation():
         try:
             money = list_of_conv[0]
         except ValueError:
-            functions.speak("Скажите, к примеру: 50 долларов в рубли")
+            return ("Скажите, к примеру: 50 долларов в рубли")
             break
     while from_currency is None:
         try:
             list_of_conv[0] = int(list_of_conv[0])
         except ValueError:
-            functions.speak("Скажите, к примеру: 50 долларов в рубли")
-            break
+            return ("Скажите, к примеру: 50 долларов в рубли")
         try:
             if "руб" in list_of_conv[1]:
                 from_currency = "RUB"
@@ -36,7 +35,7 @@ def convertation():
 
         except (CurrencyError, IndexError):
             from_currency = None
-            functions.speak("Скажите, например: 50 долларов в рубли")
+            return("Скажите, например: 50 долларов в рубли")
             break
 
     while to_currency is None:
@@ -56,13 +55,13 @@ def convertation():
 
         except (CurrencyError, IndexError):
             to_currency = None
-            functions.speak("Скажите, например: 50 долларов в рубли")
+            return("Скажите, например: 50 долларов в рубли")
             break
     while True:
         try:
-            functions.speak(f"{money} {from_currency} в {to_currency} - "
+            return (f"{money} {from_currency} в {to_currency} - "
                 f"{round(c.convert(money, from_currency, to_currency), 2)}")
             break
         except ValueError:
-            functions.speak("Скажите, например: 50 долларов в рубли")
+            return("Скажите, например: 50 долларов в рубли")
             break

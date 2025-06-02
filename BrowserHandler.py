@@ -40,9 +40,8 @@ def browser():
             break"""
             
 import webbrowser
-import functions
 
-def browser():
+def browser(command):
     sites = {
         "https://vk.com": ["vk", "вк", "вконтакте"],
         'https://www.youtube.com/': ['youtube', 'ютуб'],
@@ -55,37 +54,38 @@ def browser():
         "https://github.com/DanVoid45/course-project": ['курсач', "курсовая", "проект", 'курса'],
         "https://www.youtube.com/watch?v=dQw4w9WgXcQ": ["рик"]
     }
-    
-    command = functions.voice  # Получаем строку с голосовой командой
-    site = command.split()  # Разбиваем строку на слова
-    
-    # Проверяем, есть ли запрос на воспроизведение музыки
-    if any(keyword in command.lower() for keyword in ["трек", "музыку", "музыка"]):
-        track_name = " ".join(site[2:])  # Предполагаем, что название трека идет после команды
-        search_url = f"https://music.yandex.ru/search?text={track_name}"
-        functions.speak(f"Включаю трек: {track_name}")
-        webbrowser.open_new_tab(search_url)
-        return
 
-    # Проверяем, есть ли запрос на поиск в Google
-    if "сайт" in site or "страницу" in site:
-        query = " ".join(site[2:])  # Предполагаем, что запрос идет после команды "найди"
+    command_lower = command.lower()
+
+    # Распознавание команды на воспроизведение музыки
+    # Распознавание команды на воспроизведение музыки
+    music_triggers = [
+        "включи музыку", "включи трек", "воспроизведи музыку",
+        "поставь песню", "воспроизведи", "включи песню", "запусти музыку"
+    ]
+
+    for trigger in music_triggers:
+        if trigger in command_lower:
+            track_name = command_lower.replace(trigger, "").strip()
+            if not track_name:
+                track_name = "музыка"
+            search_url = f"https://music.yandex.ru/search?text={track_name}"
+            webbrowser.open_new_tab(search_url)
+            return f"Ищу и включаю: {track_name}"
+
+
+    # Поиск в Google
+    if "сайт" in command_lower or "страницу" in command_lower:
+        words = command.split()
+        query = " ".join(words[2:])  # или адаптировать точнее под ключевые слова
         search_url = f"https://www.google.com/search?q={query}"
-        functions.speak("Выполняю поиск в Google")
         webbrowser.open_new_tab(search_url)
-        return
+        return "Выполняю поиск в Google"
 
-    open_tab = None
-    for k, v in sites.items():
-        for i in v:
-            # Приводим текущую команду к нижнему регистру для сравнения
-            if i in command.lower():  
-                functions.speak("Выполняю")
-                open_tab = webbrowser.open_new_tab(k)
-                break
-        if open_tab is not None:
-            break
+    # Открытие сайта по ключевым словам
+    for url, keywords in sites.items():
+        if any(keyword in command_lower for keyword in keywords):
+            webbrowser.open_new_tab(url)
+            return "Открываю сайт"
 
-# Пример использования
-if __name__ == "__main__":
-    browser()
+    return "Не удалось распознать команду для браузера"
