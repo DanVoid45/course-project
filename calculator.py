@@ -52,6 +52,7 @@ specific_function_recognition = {
 
 dificult_function_recognition = {
     'степень': 'pow',
+    'степени': 'pow',
     'логарифм': 'log',
     'log': 'log',
     'pow': 'pow'
@@ -61,8 +62,6 @@ dificult_function_recognition = {
 # [sin(, [cos(, [1, +, 2], )], )]
 # sin(, ..., ) 
 def calculator(user_command: str = '') -> str:
-    print(user_command)
-    print("я вызвался!!")
     # дебаг режим
     if __name__ == '__main__':
         print('\ndebug', '-'*10, sep='\n')
@@ -131,7 +130,6 @@ def calculator(user_command: str = '') -> str:
 
             # добавление числа в command_parts
             command_parts.append(number)
-            print(command_parts)
 
             # сложить 2 и 3 -> buffer == + -> command_parts == [..., 2, +, 3, ...]
             if buffer != '':
@@ -169,7 +167,6 @@ def calculator(user_command: str = '') -> str:
             # sqrt(a) sqr(a) sin(a) cos(a) tg(a) ctg(a)
             elif words[i] in specific_function_recognition:
                 command_parts.append(specific_function_recognition[words[i]] + '(')
-                print ("aboba")
                 print(command_parts)
             
             # pow(a,b), log(a, b)
@@ -310,7 +307,7 @@ def calculator(user_command: str = '') -> str:
         if user_command == '':
             return('Скажите, например: Сколько будет 5+5?')
         else:
-            return('Неверная команда' + ' '.join(commands))
+            return('Неверная команда. Список команд: \n' + ' '.join(commands))
 
 
 def temp(string: str):

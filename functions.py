@@ -10,8 +10,10 @@ from calculator import calculator
 import time
 import envelope
 import translator
+import hello
 import webbrowser
 import mon2
+import random
 import weather
 import re
 
@@ -26,7 +28,6 @@ opts = {
         "как",
         "сколько",
         "поставь",
-        "переведи",
         "засеки",
         "запусти",
         "сколько будет",
@@ -40,7 +41,7 @@ opts = {
             "какое сейчас время",
         ),
         "startStopwatch": ("запусти секундомер", "включи секундомер", "засеки время"),
-        "stopStopwatch": ("останови секундомер", "выключи секундомер", "останови"),
+        "stopStopwatch": ("останови секундомер", "выключи секундомер", "останови", "отключи секундомер"),
         "calc": (
             "прибавить",
             "умножить",
@@ -49,6 +50,7 @@ opts = {
             "вычесть",
             "поделить",
             "сложить",
+            "степени",
             "логарифм",
             "sin",
             "cos",
@@ -73,19 +75,19 @@ opts = {
             "кинь",
         ),
         "shutdown": (
-            "выключи",
-            "выключить",
-            "отключение",
-            "отключи",
             "выключи компьютер",
+            "отключи ноут",
         ),
         "conv": ("валюта", "конвертер", "доллар", "руб", "евро"),
         "internet": ("открой", "вк", "гугл", "сайт", "вконтакте", "ютуб"),
-        "translator": ("переводчик", "translate"),
+        "translator": ("переводчик", "translate", "переведи"),
         "weather": ("прогноз","погода","abc"),
+        "hello": ("привет", "здравствуйте", "категорически"),
         "nothing": ("Не распознано"),
     },
 }
+
+
 startTime = 0
 speak_engine = pyttsx3.init()
 voices = speak_engine.getProperty("voices")
@@ -109,37 +111,42 @@ def speak(what):
     speak.Volume = 100
     speak.Speak(what)
 
+def callback_for_text_input(request, callback_ui=None):
+    request = request.lower()
+
+    for x in opts["alias"]:
+        request = request.replace(x, "").strip()
+    for x in opts["tbr"]:
+        request = request.replace(x, "").strip()
+    
+    recognized = recognize_cmd(request)
+    response = execute_cmd(request, recognized["cmd"])
+
+    return response
+
+
 def callback(recognizer, audio, callback_ui=None):
     try:
         global voice
         voice = recognizer.recognize_google(audio, language="ru-RU").lower()
 
-        print("Распознано: " + voice)
-
         if voice.startswith(opts["alias"]):
-            cmd = voice
+            cmd_text = voice
 
             for x in opts["alias"]:
-                cmd = cmd.replace(x, "").strip()
+                cmd_text = cmd_text.replace(x, "").strip()
+
 
             for x in opts["tbr"]:
-                cmd = cmd.replace(x, "").strip()
-            voice = cmd
-            # распознаем и выполняем команду
-            cmd = recognize_cmd(cmd)
-            execute_cmd(cmd["cmd"])
+                cmd_text = cmd_text.replace(x, "").strip()
 
-            # Очистили — теперь можно показывать пользователю и обрабатывать
+            recognized = recognize_cmd(cmd_text) 
+
+            response = execute_cmd(cmd_text, recognized["cmd"])
+
             if callback_ui:
-                callback_ui(cmd, is_voice=True)
+                callback_ui(cmd_text, is_voice=True)     # показываем распознанный текст пользователя
 
-            recognized = recognize_cmd(cmd)
-            response = execute_cmd(cmd, recognized["cmd"])
-
-            if response:
-                speak(response)
-                if callback_ui:
-                    callback_ui(response, is_voice=True)
 
     except sr.UnknownValueError:
         if callback_ui:
@@ -149,28 +156,18 @@ def callback(recognizer, audio, callback_ui=None):
         if callback_ui:
             callback_ui("Ошибка соединения!", is_voice=True)
 
-
-
-
-
 stopper = None
 
+
 def listen(callback_ui=None):
-    global stopper
-    mic = sr.Microphone(device_index=1)
-    with mic as source:
-        r.adjust_for_ambient_noise(source)
+    recognizer = sr.Recognizer()
+    mic = sr.Microphone()
 
-    def wrapper(recognizer, audio):
-        try:
-            print(">>> Вызван wrapper")
-            callback(recognizer, audio, callback_ui)
-        except Exception as e:
-            print("[Ошибка в wrapper]:", e)
-
-
-    print(">>> Стартуем прослушивание в фоне")
-    stopper = r.listen_in_background(mic, wrapper)
+    def background_callback(recognizer, audio):
+        callback(recognizer, audio, callback_ui=callback_ui)
+        
+    stop_listening = recognizer.listen_in_background(mic, background_callback)
+    return stop_listening
 
 
 def recognize_cmd(cmd):
@@ -187,6 +184,8 @@ def execute_cmd(request, cmd):
     if cmd == "ctime":                                                                             
         now = datetime.datetime.now()
         return  ("Сейчас {0}:{1}".format(str(now.hour), str(now.minute)))
+    elif cmd == "hello":
+        return hello.hie()
     elif cmd == "shutdown":                                                                        
         open_tab = webbrowser.open_new_tab("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
         os.system("shutdown -s -t 90")

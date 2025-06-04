@@ -39,8 +39,5 @@ def weather():
         f"- Состояние: {translated_status.capitalize()}\n"
         f"- Ветер: {wind['speed']} метров в секунду"
     )
-    command = functions.voice
-    site = command.split()
-    if "прогноз" in site:
-        return(forecast)
+    return(forecast)
         
