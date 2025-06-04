@@ -143,8 +143,6 @@ def click_handler_text(request, is_voice=False):
     return functions.speak(response_text)
 
 
-
-
 if __name__ == "__main__":
     root = CTk()
     root.title("Айрис")
@@ -162,9 +160,7 @@ if __name__ == "__main__":
     scrollbar.pack(side="right", fill="y")
     messages_canvas.pack(side="right", fill="both", expand=True)
 
-
     messages_canvas.configure(scrollregion=(0, 0, 650, 0))
-
 
     # Поле ввода
     entry = CTkEntry(root, placeholder_text="Введите запрос...", width=500)
