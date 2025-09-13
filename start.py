@@ -1,10 +1,10 @@
 import os, subprocess
-subprocess.run(["powershell", "-noexit", '.\\venv\\Scripts\\Activate.ps1'])
-os.system('cls')
-
 import functions
 import time
 import datetime
+
+subprocess.run(["powershell", "-noexit", '.\\venv\\Scripts\\Activate.ps1'])
+os.system('cls')
 
 now = datetime.datetime.now()
 
