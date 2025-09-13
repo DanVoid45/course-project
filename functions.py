@@ -129,6 +129,9 @@ def callback(recognizer, audio, callback_ui=None):
     try:
         global voice
         voice = recognizer.recognize_google(audio, language="ru-RU").lower()
+        
+        if callback_ui:
+                callback_ui(voice, is_voice=True)     # показываем распознанный текст пользователя
 
         if voice.startswith(opts["alias"]):
             cmd_text = voice
@@ -144,8 +147,6 @@ def callback(recognizer, audio, callback_ui=None):
 
             response = execute_cmd(cmd_text, recognized["cmd"])
 
-            if callback_ui:
-                callback_ui(cmd_text, is_voice=True)     # показываем распознанный текст пользователя
 
 
     except sr.UnknownValueError:

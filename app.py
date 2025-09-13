@@ -140,7 +140,7 @@ def click_handler_text(request, is_voice=False):
     messages_canvas.configure(scrollregion=(0, 0, canvas_width, bottom_y))
     messages_canvas.yview_moveto(1.0)
 
-    return functions.speak(response_text)
+    return messages_canvas.after(100, lambda: functions.speak(response_text))
 
 
 if __name__ == "__main__":

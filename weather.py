@@ -35,7 +35,6 @@ def weather():
         f"Погода в {location}:\n"
         f"- Температура: {temperature['temp']}°\n"
         f"- Ощущается как: {temperature['feels_like']}°\n"
-        f"- Максимальная: {temperature['temp_max']}°, минимальная: {temperature['temp_min']}°\n"
         f"- Состояние: {translated_status.capitalize()}\n"
         f"- Ветер: {wind['speed']} метров в секунду"
     )
