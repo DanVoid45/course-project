@@ -1,13 +1,26 @@
-import requests
-import functions
+from googletrans import Translator
 
-def translate():
-    url = 'https://www.deepl.com/ru/translator'
-    key = 'trnsl.1.1.20190227T075339Z.1b02a9ab6d4a47cc.f37d50831b51374ee600fd6aa0259419fd7ecd97'
-    text = functions.voice.split()[1:]
-    lang = 'en-ru'
-    r = requests.post(url, data={'key': key, 'text': text, 'lang': lang}).json()
+# Опции, чтобы убрать лишние слова из запроса
+ALIASES = ("айрис", "арис", "рис", "аис", "iris", "airis", "ириска", "алиса")
+TRIGGERS = (
+    "переведи", "переводчик", "translate"
+)
+
+def clean_request(text):
+    for x in ALIASES:
+        text = text.replace(x, "")
+    for x in TRIGGERS:
+        text = text.replace(x, "")
+    return text.strip()
+
+def translate(request):
+    translator = Translator()
+    
+    # Очищаем текст запроса
+    clean_text = clean_request(request)
+    
     try:
-        functions.speak(r["text"])
-    except:
-        functions.speak("Обратитесь к переводчику, начиная со слова 'Переводчик'")
+        translated = translator.translate(clean_text, src='en', dest='ru')
+        return translated.text
+    except Exception as e:
+        return f"Ошибка перевода: {e}"
