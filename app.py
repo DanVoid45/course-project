@@ -12,6 +12,8 @@ set_default_color_theme('dark-blue')
 
 voice_running = False
 listener = None
+current_text = ""
+messages_history_user, messages_history_assist = [], []
 
 def callback_ui_threadsafe(text, is_voice=False):
     voice_queue.put((text, is_voice))
@@ -19,7 +21,9 @@ def callback_ui_threadsafe(text, is_voice=False):
 def process_queue():
     try:
         while True:
+            global current_text
             text, is_voice = voice_queue.get_nowait()
+            current_text = text
             click_handler_text(text, is_voice)
     except queue.Empty:
         pass
@@ -78,6 +82,7 @@ def toggle_voice():
         voice_running = False
         btn_voice.configure(fg_color="#CD0074")
 
+#определяем высоту текста
 def calculate_text_height(canvas, text, font, width):
     temp_id = canvas.create_text(0, 0, text=text, font=font, anchor='nw', width=width)
     canvas.update_idletasks()
@@ -90,10 +95,18 @@ def calculate_text_height(canvas, text, font, width):
 
 message_y = 10  # глобальная переменная, высота для следующего сообщения
 
-bottom_y = 500  # изначально нижняя граница Canvas (высота)
+bottom_y = 500  # изначально нижняя граница сообщений (высота)
+
+#Функция вызывается при изменении размера окна
+def on_windows_resize(event):
+        global current_text
+        new_width = root.winfo_width() * 1.1875
+        messages_canvas.delete("all")
+        click_handler_text(current_text, is_voice=False, canvas_width = new_width)
 
 
-def click_handler_text(request, is_voice=False):
+
+def click_handler_text(request, is_voice=False, canvas_width = 950):
     global bottom_y
     if not request or request.strip() == "" or request in ["Голос не распознан!", "Ошибка соединения!"]:
         return
@@ -103,13 +116,13 @@ def click_handler_text(request, is_voice=False):
     padding = 10
     msg_width = 280
 
-    user_bg = "#2B2B2B"
-    assistant_bg = "#2B2B2B"
+    user_bg = "#2B3A42"        # Темный серо-синий
+    assistant_bg = "#3A4B53"   # Серо-синий немного светлее
     text_color = "#FFFFFF"
 
-    canvas_width = 650
     font = ("Arial", 14)
 
+    messages_history_user.append(request)
     # --- Пользователь ---
     user_text_height = calculate_text_height(messages_canvas, request, font, msg_width - 20)
     x1 = canvas_width - msg_width - padding
@@ -126,6 +139,7 @@ def click_handler_text(request, is_voice=False):
     # --- Ассистент ---
     response_text = functions.callback_for_text_input(request, callback_ui=click_handler_text)
 
+    messages_history_assist.append(response_text)
     assistant_text_height = calculate_text_height(messages_canvas, response_text, font, msg_width - 20)
     x1 = padding
     y1 = bottom_y
@@ -149,37 +163,56 @@ if __name__ == "__main__":
     root.geometry("800x600")
 
     # Контейнер для сообщений
-    messages_container = CTkFrame(root, width=650, fg_color="#1C1C1C")
-    messages_container.place(relx=0.5, rely=0.05, anchor='n')
+    messages_container = CTkFrame(root, fg_color="#1C1C1C")
+    messages_container.pack(fill="both", expand=True, padx=10, pady=10)
 
-    # Canvas и Scrollbar для прокрутки
-    messages_canvas = tk.Canvas(messages_container, bg="#1C1C1C", highlightthickness=0, width=650, height=500)
+    # Canvas и Scrollbar
+    messages_canvas = tk.Canvas(messages_container, bg="#1C1C1C", highlightthickness=0)
     scrollbar = CTkScrollbar(messages_container, orientation="vertical", command=messages_canvas.yview)
     messages_canvas.configure(yscrollcommand=scrollbar.set)
 
     scrollbar.pack(side="right", fill="y")
-    messages_canvas.pack(side="right", fill="both", expand=True)
+    messages_canvas.pack(side="left", fill="both", expand=True)
 
-    messages_canvas.configure(scrollregion=(0, 0, 650, 0))
+    # Нижняя панель
+    bottom_panel = CTkFrame(root, height=60)
+    bottom_panel.pack(fill="x", padx=10, pady=10)
 
-    # Поле ввода
-    entry = CTkEntry(root, placeholder_text="Введите запрос...", width=500)
-    entry.place(relx=0.5, rely=0.8, anchor='center')
-
-    # Кнопка отправки
     image_plane = CTkImage(light_image=Image.open('pictures/plane.png'), size=(20, 20))
-    btn_text = CTkButton(root, image=image_plane, width=20, corner_radius=32, text='', fg_color='#CD0074',
-                         command=lambda: click_handler_text(entry.get()))
-    btn_text.place(relx=0.9, rely=0.8, anchor='center')
-    btn_text.bind('<Enter>', lambda e: btn_text.configure(fg_color='#CD0074'))
-    root.bind('<Return>', lambda e: btn_text.invoke())
-
-    # Кнопка голосового ввода
     image_microfone = CTkImage(light_image=Image.open('pictures/microfone.png'), size=(20, 20))
-    btn_voice = CTkButton(root, image=image_microfone, width=20, corner_radius=32, text='',
-                          fg_color='#CD0074', command=toggle_voice)
-    btn_voice.place(relx=0.1, rely=0.8, anchor='center')
 
-    root.resizable(False, False)
+
+    # Элементы управления через pack
+    btn_voice = CTkButton(
+        bottom_panel, 
+        image=image_microfone, 
+        width=20, 
+        corner_radius=32, 
+        text='',
+        fg_color='#CD0074', 
+        command=toggle_voice
+    )
+    btn_voice.pack(side="left", padx=5)
+
+    entry = CTkEntry(bottom_panel, placeholder_text="Введите запрос...")
+    entry.pack(side="left", fill="x", expand=True, padx=5)
+
+    btn_text = CTkButton(
+        bottom_panel, 
+        image=image_plane, 
+        width=20, 
+        corner_radius=32, 
+        text='', 
+        fg_color='#CD0074',
+        command=lambda: click_handler_text(entry.get())
+    )
+    btn_text.pack(side="right", padx=5)
+    
+
+
+    #root.resizable(False, False)
+    root.bind('<Return>', lambda e: btn_text.invoke())
     root.after(100, process_queue)
+    root.bind('<Configure>', on_windows_resize) # следим за конфигурацией размеров окна
+
     root.mainloop()

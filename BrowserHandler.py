@@ -9,7 +9,8 @@ def browser(command):
         'https://www.amazon.com': ['амазон', 'amazon'],
         'https://telete.in/gurupython': ['пайтонгуру', 'pythonguru'],
         "https://github.com/DanVoid45/course-project": ['курсач', "курсовая", "проект", 'курса'],
-        "https://www.youtube.com/watch?v=dQw4w9WgXcQ": ["рик"]
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ": ["рик"],
+        "https://t.me/duckling_schedule_bot":["расписание"]
     }
 
     command_lower = command.lower()

@@ -83,6 +83,7 @@ opts = {
         "translator": ("переводчик", "translate", "переведи"),
         "weather": ("прогноз","погода","abc"),
         "hello": ("привет", "здравствуйте", "категорически"),
+        "stop": ("хватит","стоп","остановись"),
         "nothing": ("Не распознано"),
     },
 }
@@ -215,8 +216,10 @@ def execute_cmd(request, cmd):
             )
         else:
             return("Секундомер не включен")
-    elif cmd == "weather":                                                                          #нужно проверить
+    elif cmd == "weather":
         return weather.weather()
+    #elif cmd == "stop":
+
     elif cmd == 'nothing':
         return "Не распознано"
     else:

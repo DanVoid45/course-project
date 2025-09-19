@@ -1,24 +1,18 @@
-import speech_recognition as sr
+import tkinter as tk
 
-r = sr.Recognizer()
-mic = sr.Microphone(device_index=1) # проверить микрофон для корректной работы
+def on_resize(event):
+    """Функция, вызываемая при изменении размера окна."""
+    new_width = event.width
+    new_height = event.height
+    print(f"Размер окна изменен: Ширина = {new_width}, Высота = {new_height}")
+    # Здесь вы можете обновить элементы интерфейса или выполнить другие действия
 
-def callback(recognizer, audio):
-    print("[callback] Вызвана функция callback")
-    try:
-        voice = recognizer.recognize_google(audio, language="ru-RU").lower()
-        print(f"[callback] Распознано: {voice}")
-    except Exception as e:
-        print(f"[callback] Ошибка распознавания: {e}")
+# Создаем главное окно
+root = tk.Tk()
+root.title("Отслеживание размера окна")
 
-stop_listening = r.listen_in_background(mic, callback)
+# Привязываем функцию on_resize к событию <Configure>
+root.bind('<Configure>', on_resize)
 
-import time
-print("Начинаем слушать в фоне...")
-
-try:
-    while True:
-        time.sleep(0.1)
-except KeyboardInterrupt:
-    stop_listening()
-    print("Остановлено")
+# Запускаем главный цикл обработки событий
+root.mainloop()
